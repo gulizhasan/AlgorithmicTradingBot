@@ -1,8 +1,8 @@
 
-# Alpaca Trading Bot
+# Algorithmic Trading Bot
 
 ## Description
-This Alpaca Trading Bot is an automated stock trading software that utilizes the Alpaca Trade API. It's designed to execute trades based on technical analysis indicators such as Moving Averages, RSI (Relative Strength Index), and MACD (Moving Average Convergence Divergence).
+This Algorithmic Trading Bot is an automated stock trading software that utilizes the Alpaca Trade API. It's designed to execute trades based on technical analysis indicators such as Moving Averages, RSI (Relative Strength Index), and MACD (Moving Average Convergence Divergence).
 
 ## Features
 - Real-time market data processing.
