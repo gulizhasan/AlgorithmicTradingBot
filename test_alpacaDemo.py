@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import Mock, patch
-from alpacaDemo import calculate_moving_average  # replace with the actual function name
 import alpacaDemo
 
 # Test for the analyze_market_data function
@@ -17,6 +16,4 @@ def test_analyze_market_data():
         alpacaDemo.analyze_market_data(symbol, test_data)
 
         # Assertions to verify expected behavior
-        # This will depend on what analyze_market_data is expected to do with the given test_data
-        # Example: Check if place_order was called
         mock_place_order.assert_called()

@@ -11,7 +11,7 @@ import talib
 # Configuration file for the keys and base URL
 import config
 
-# Setup logging
+# Setup logging to track the bot's operation and errors
 logging.basicConfig(filename='alpaca_bot.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 
 # Initialize Alpaca REST API client
@@ -22,13 +22,13 @@ except Exception as e:
     logging.error(f"Error initializing Alpaca REST API client: {str(e)}")
     exit(1)
 
-# Define trading parameters
-symbols = ["AAPL", "MSFT", "GOOGL"]  # Add or remove symbols as needed
-short_window = 20  # Short-term moving average window
-long_window = 50   # Long-term moving average window
-qty = 10           # Number of shares to buy/sell
+# Define trading parameters like stock symbols, moving average windows, and quantity to trade
+symbols = ["AAPL", "MSFT", "GOOGL"]  # Stock symbols to trade
+short_window = 20  # Window size for short-term moving average
+long_window = 50   # Window size for long-term moving average
+qty = 10           # Number of shares to buy or sell
 
-# Initialize data storage for each symbol
+# Initialize data storage for storing historical data for each symbol
 historical_data = {symbol: pd.DataFrame(columns=["timestamp", "close"]) for symbol in symbols}
 ema_short = {symbol: pd.Series() for symbol in symbols}
 ema_long = {symbol: pd.Series() for symbol in symbols}
@@ -36,14 +36,15 @@ rsi_values = {symbol: pd.Series() for symbol in symbols}
 macd_values = {symbol: pd.Series() for symbol in symbols}
 macd_signal_values = {symbol: pd.Series() for symbol in symbols}
 
-# Function to check if the market is open
+# Function to check if the market is currently open
 def is_market_open():
     """
-    Check if the market is currently open
+    Checks if the market is currently open using Alpaca's API.
     """
     clock = api.get_clock()
     return clock.is_open
 
+# Function to analyze market data for a given symbol
 def analyze_market_data(symbol, data):
     global historical_data, ema_short, ema_long, rsi_values, macd_values, macd_signal_values
 
@@ -60,7 +61,7 @@ def analyze_market_data(symbol, data):
 
         # Ensure enough data for analysis for the specific symbol
         if len(historical_data[symbol]) >= long_window:
-            # Calculate indicators (e.g., EMAs, RSI, MACD) for the specific symbol
+            # Calculate technical indicators for the specific symbol
             ema_short[symbol] = historical_data[symbol]['close'].ewm(span=short_window, adjust=False).mean()
             ema_long[symbol] = historical_data[symbol]['close'].ewm(span=long_window, adjust=False).mean()
             rsi_values[symbol] = talib.RSI(historical_data[symbol]['close'], timeperiod=14)
@@ -69,7 +70,7 @@ def analyze_market_data(symbol, data):
                                                                            slowperiod=26,
                                                                            signalperiod=9)
 
-            # Implement trading strategy (logic to decide when to buy/sell) for the specific symbol
+            # Implement trading strategy based on calculated indicators
             if rsi_values[symbol].iloc[-1] < 30 and not position_open(symbol, 'long'):  # RSI Buy signal
                 place_order(symbol, qty, "buy")
             elif rsi_values[symbol].iloc[-1] > 70 and position_open(symbol, 'long'):  # RSI Sell signal
@@ -82,6 +83,7 @@ def analyze_market_data(symbol, data):
     except Exception as e:
         logging.error(f"Error analyzing market data for {symbol}: {str(e)}")
 
+# Function to check if a position is open for a given symbol and type
 def position_open(symbol, position_type):
     try:
         positions = api.list_positions()
@@ -93,6 +95,7 @@ def position_open(symbol, position_type):
         logging.error(f"Error checking open positions for {symbol}: {str(e)}")
         return False
 
+# Function to place an order
 def place_order(symbol, quantity, action):
     try:
         if action == "buy":
@@ -116,6 +119,7 @@ def place_order(symbol, quantity, action):
     except Exception as e:
         logging.error(f"Order placement failed for {symbol}: {str(e)}")
 
+# Function to handle incoming WebSocket messages
 def on_message(ws, message):
     try:
         json_message = json.loads(message)
@@ -126,12 +130,15 @@ def on_message(ws, message):
     except Exception as e:
         logging.error(f"Error processing WebSocket message: {str(e)}")
 
+# Function to handle WebSocket errors
 def on_error(ws, error):
     logging.error(f"WebSocket error: {error}")
 
+# Function to handle WebSocket closure
 def on_close(ws, close_status_code, close_msg):
     logging.info(f"WebSocket closed with code: {close_status_code}, message: {close_msg}")
 
+# Function to handle opening of WebSocket connection
 def on_open(ws):
     logging.info("WebSocket connection opened")
     try:
@@ -152,14 +159,14 @@ def on_open(ws):
 socket = "wss://paper-api.alpaca.markets/stream"
 ws = websocket.WebSocketApp(socket, on_open=on_open, on_message=on_message, on_error=on_error, on_close=on_close)
 
-# Running the WebSocket in a separate thread
+# Running the WebSocket in a separate thread to maintain continuous data reception
 ws_thread = threading.Thread(target=ws.run_forever)
 ws_thread.start()
 
-# Main loop
+# Main loop to keep the script running
 try:
     while True:
-        sleep(60)  # Main loop doing nothing, just staying alive
+        sleep(60)  # Keep the script running
 except KeyboardInterrupt:
     logging.info("Script interrupted by user.")
     ws.close()
